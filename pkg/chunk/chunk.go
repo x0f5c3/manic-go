@@ -41,13 +41,15 @@ func min(a, b int) int {
 	}
 	return b
 }
-func (c *ChunkIter) Next() {
+func (c *ChunkIter) Next() bool {
 	if c.low > c.hi {
 		c.next = ""
+		return false
 	} else {
 		prev_low := c.low
 		c.low += min(c.chunkSize, c.hi-c.low+1)
 		c.next = fmt.Sprintf("bytes=%v-%v", prev_low, c.low-1)
+		return true
 	}
 }
 func (c *ChunkIter) Get() string {

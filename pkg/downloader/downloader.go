@@ -3,8 +3,11 @@ package downloader
 import (
 	"crypto/sha256"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
+
+	"github.com/x0f5c3/manic-go/pkg/chunk"
 )
 
 type SumError struct {
@@ -59,13 +62,36 @@ func (c *File) CompareSha() error {
 	}
 }
 
-// func (c *File) Download(workers int) error {
-// 	c.GetLength()
-// 	chnk, err := chunk.New(0, c.Length-1, c.Length/workers)
-// 	if err != nil {
-// 		return err
-// 	}
+func (c *File) Download(workers int) error {
+	c.GetLength()
+	chnk, err := chunk.New(0, c.Length-1, c.Length/workers)
+	if err != nil {
+		return err
+	}
+	for chnk.Next() {
+		val := chnk.Get()
+		go c.DownloadChunk(val)
+	}
+	return nil
+}
 
-// }
-
-func (c *File) DownloadChunk(val string) error
+func (c *File) DownloadChunk(val string) error {
+	req, err := http.NewRequest("GET", c.Url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Range", val)
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	for _, n := range body {
+		c.Data = append(c.Data, n)
+	}
+	return nil
+}
