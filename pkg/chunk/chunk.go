@@ -10,6 +10,7 @@ type ChunkIter struct {
 	chunkSize  int
 	next       string
 	currOffset int
+	currLen    int
 }
 
 type Chunk struct {
@@ -52,15 +53,21 @@ func (c *ChunkIter) Next() bool {
 		return false
 	} else if c.low == c.hi {
 		c.next = fmt.Sprintf("bytes=%v-", c.hi)
+		fmt.Printf("%v\n", c.next)
 		return true
 	} else {
 		prev_low := c.low
 		c.low += min(c.chunkSize, c.hi-c.low+1)
+		fmt.Printf("Low: %v\n High: %v", prev_low, c.low-1)
 		c.next = fmt.Sprintf("bytes=%v-%v", prev_low, c.low-1)
 		c.currOffset = prev_low
+		c.currLen = (c.low - 1) - prev_low
 		return true
 	}
 }
 func (c *ChunkIter) Get() (int, string) {
 	return c.currOffset, c.next
+}
+func (c *ChunkIter) GetLength() int {
+	return c.currLen
 }

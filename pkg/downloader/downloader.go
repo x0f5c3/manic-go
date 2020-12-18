@@ -3,6 +3,7 @@ package downloader
 import (
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"bytes"
 	"encoding/hex"
 
+	"github.com/schollz/progressbar/v3"
 	"github.com/x0f5c3/manic-go/pkg/chunk"
 )
 
@@ -77,9 +79,48 @@ func makeChannels(count int) []chan chunk.Chunk {
 	}
 	return res
 }
+
+func aggregate(ch chan chunk.Chunk, multi []chan chunk.Chunk) {
+	defer close(ch)
+	for _, c := range multi {
+		dat := <-c
+		ch <- dat
+	}
+}
+
+func (c *File) startWorkers(chans []chan chunk.Chunk, chnk chunk.ChunkIter, progress bool, pb ...progressbar.ProgressBar) chan chunk.Chunk {
+	final := make(chan chunk.Chunk)
+	for _, ch := range chans {
+		some := chnk.Next()
+		if some {
+			off, val := chnk.Get()
+			if progress && len(pb) != 0 {
+				go c.DownloadChunkProgress(val, ch, off, pb[0])
+			} else {
+				go c.DownloadChunk(val, ch, off)
+			}
+		}
+	}
+	go aggregate(final, chans)
+	return final
+}
+
+func (c *File) dataPut(ch chan chunk.Chunk) {
+	res := make([]byte, c.Length)
+	for dat := range ch {
+		startPos := dat.Offset
+		for _, val := range dat.Data {
+			res[startPos] = val
+			startPos++
+		}
+	}
+	for _, final := range res {
+		c.Data = append(c.Data, final)
+	}
+}
+
 func (c *File) Download(workers int) error {
 	c.GetLength()
-	res := make([]byte, c.Length)
 	chnk, err := chunk.New(0, c.Length-1, c.Length/workers)
 	if err != nil {
 		return err
@@ -90,32 +131,11 @@ func (c *File) Download(workers int) error {
 	} else {
 		chans = makeChannels(workers + 1)
 	}
-	for _, ch := range chans {
-		some := chnk.Next()
-		if some {
-			off, val := chnk.Get()
-			go c.DownloadChunk(val, ch, off)
-		}
-	}
-	arrArr := make(map[int]chunk.Chunk)
-	for i, ch := range chans {
-		for data := range ch {
-			arrArr[i] = data
-		}
-	}
-	for _, val := range arrArr {
-		startPos := val.Offset
-		for _, dat := range val.Data {
-			res[startPos] = dat
-			startPos++
-		}
-	}
-	for _, final := range res {
-		c.Data = append(c.Data, final)
-	}
-
+	fullCh := c.startWorkers(chans, chnk)
+	c.dataPut(fullCh)
 	return nil
 }
+
 func (c *File) DownloadAndVerify(workers int) error {
 	err := c.Download(workers)
 	if err != nil {
@@ -128,7 +148,30 @@ func (c *File) DownloadAndVerify(workers int) error {
 	return nil
 }
 
-func (c *File) DownloadChunk(val string, ch chan chunk.Chunk, off int) error {
+func (c *File) DownloadChunkProgress(val string, ch chan chunk.Chunk, off int, pb ...progressbar.ProgressBar) error {
+	defer close(ch)
+	req, err := http.NewRequest("GET", c.Url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Range", val)
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	var content []byte
+	bodyWriter := io.MultiWriter(content, pb)
+	io.Copy(bodyWriter, resp.Body)
+	chnk := chunk.Chunk{
+		Data:   content,
+		Offset: off,
+	}
+	ch <- chnk
+	return nil
+}
+
+func (c *File) DownloadChunk(val string, ch chan chunk.Chunk, off int, pb ...progressbar.ProgressBar) error {
 	req, err := http.NewRequest("GET", c.Url, nil)
 	if err != nil {
 		return err
