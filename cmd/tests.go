@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/i582/cfmt"
 	"github.com/spf13/cobra"
 	"github.com/x0f5c3/manic-go/pkg/downloader"
 )
 
 var workers int
 var check string
+var threads int
 
 // testsCmd represents the tests command
 var testsCmd = &cobra.Command{
@@ -40,6 +42,7 @@ var testsCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(testsCmd)
 	testsCmd.Flags().IntVarP(&workers, "workers", "w", 3, "amount of concurrent workers")
+	testsCmd.Flags().IntVarP(&threads, "threads", "t", 2, "Maximum amount of threads")
 	testsCmd.Flags().StringVarP(&check, "check", "c", "", "Compare to a sha256sum")
 	// Here you will define your flags and configuration settings.
 
@@ -54,11 +57,14 @@ func init() {
 
 func download(cmd *cobra.Command, args []string) {
 	url := args[0]
-	workers := workers
 	client := http.Client{}
-	file := downloader.New(url, check, &client)
-	if err := file.Download(workers); err != nil {
-		fmt.Printf("Error: %v\n", err)
+	file, err := downloader.New(url, check, &client)
+	if err != nil {
+		cfmt.Printf("%v", err)
+	}
+
+	if err := file.Download(workers, threads); err != nil {
+		cfmt.Printf("Error: %v\n", err)
 	}
 	if check != "" {
 		if err := file.CompareSha(); err != nil {
