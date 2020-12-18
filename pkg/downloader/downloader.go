@@ -7,12 +7,15 @@ import (
 	"net/http"
 	"strconv"
 
+	"bytes"
+	"encoding/hex"
+
 	"github.com/x0f5c3/manic-go/pkg/chunk"
 )
 
 type SumError struct {
-	Reference string
-	Data      string
+	Reference []byte
+	Data      []byte
 }
 
 type File struct {
@@ -26,7 +29,7 @@ type File struct {
 func New(url, sha string, client *http.Client) File {
 	return File{
 		Url:    url,
-		Data:   nil,
+		Data:   make([]byte, 0),
 		Sha:    sha,
 		Client: client,
 		Length: 0,
@@ -52,30 +55,80 @@ func (c *File) GetLength() error {
 }
 func (c *File) CompareSha() error {
 	sum := sha256.Sum256(c.Data)
-	sumString := string(sum[:])
-	if sumString == c.Sha {
+	byted, err := hex.DecodeString(c.Sha)
+	if err != nil {
 		return nil
 	}
+	if bytes.Compare(sum[:32], byted) == 0 {
+		return nil
+	}
+	fmt.Println("Len:", len(byted))
 	return &SumError{
-		Reference: c.Sha,
-		Data:      sumString,
+		Reference: byted,
+		Data:      sum[:32],
 	}
 }
 
+func makeChannels(count int) []chan chunk.Chunk {
+	var res []chan chunk.Chunk
+	for i := 0; i < count; i++ {
+		ch := make(chan chunk.Chunk)
+		res = append(res, ch)
+	}
+	return res
+}
 func (c *File) Download(workers int) error {
 	c.GetLength()
+	res := make([]byte, c.Length)
 	chnk, err := chunk.New(0, c.Length-1, c.Length/workers)
 	if err != nil {
 		return err
 	}
-	for chnk.Next() {
-		val := chnk.Get()
-		go c.DownloadChunk(val)
+	var chans []chan chunk.Chunk
+	if c.Length%workers == 0 {
+		chans = makeChannels(workers)
+	} else {
+		chans = makeChannels(workers + 1)
+	}
+	for _, ch := range chans {
+		some := chnk.Next()
+		if some {
+			off, val := chnk.Get()
+			go c.DownloadChunk(val, ch, off)
+		}
+	}
+	arrArr := make(map[int]chunk.Chunk)
+	for i, ch := range chans {
+		for data := range ch {
+			arrArr[i] = data
+		}
+	}
+	for _, val := range arrArr {
+		startPos := val.Offset
+		for _, dat := range val.Data {
+			res[startPos] = dat
+			startPos++
+		}
+	}
+	for _, final := range res {
+		c.Data = append(c.Data, final)
+	}
+
+	return nil
+}
+func (c *File) DownloadAndVerify(workers int) error {
+	err := c.Download(workers)
+	if err != nil {
+		return err
+	}
+	shaErr := c.CompareSha()
+	if shaErr != nil {
+		return shaErr
 	}
 	return nil
 }
 
-func (c *File) DownloadChunk(val string) error {
+func (c *File) DownloadChunk(val string, ch chan chunk.Chunk, off int) error {
 	req, err := http.NewRequest("GET", c.Url, nil)
 	if err != nil {
 		return err
@@ -90,8 +143,11 @@ func (c *File) DownloadChunk(val string) error {
 	if err != nil {
 		return err
 	}
-	for _, n := range body {
-		c.Data = append(c.Data, n)
+	chnk := chunk.Chunk{
+		Data:   body,
+		Offset: off,
 	}
+	ch <- chnk
+	close(ch)
 	return nil
 }
