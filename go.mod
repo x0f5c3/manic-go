@@ -3,6 +3,8 @@ module github.com/x0f5c3/manic-go
 go 1.15
 
 require (
+	github.com/AlecAivazis/survey/v2 v2.2.7
+	github.com/google/go-github/v33 v33.0.0
 	github.com/gookit/color v1.3.5 // indirect
 	github.com/i582/cfmt v1.0.7
 	github.com/reugn/async v0.0.0-20200819063434-15e5b3951cd7

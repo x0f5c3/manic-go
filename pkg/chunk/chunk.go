@@ -16,6 +16,11 @@ type ChunkError struct {
 	What string
 }
 
+type SingleChunk struct {
+	Data []byte
+	Val string
+	Offset int
+}
 func (e ChunkError) Error() string {
 	return fmt.Sprintf("Chunk error: %v\n", e.What)
 }

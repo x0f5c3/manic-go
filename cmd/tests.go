@@ -61,32 +61,16 @@ func init() {
 func download(cmd *cobra.Command, args []string) {
 	url := args[0]
 	client := http.Client{}
-	file, err := downloader.New(url, check, &client)
+	file, err := downloader.New(url, check, &client, nil)
 	if err != nil {
 		cfmt.Printf("%v", err)
 	}
-
-	if err := file.Download(workers, threads); err != nil {
-		cfmt.Printf("Error: %v\n", err)
-	}
 	flag, err := cmd.Flags().GetBool("progress")
-	if check != "" {
-		if err != nil {
-			panic(err)
-		}
-		if err := file.DownloadAndVerify(workers, threads, flag); err != nil {
-			panic(err)
-		}
-	} else {
-		if flag {
-			if err := file.DownloadWithProgress(workers, threads); err != nil {
-				panic(err)
-			}
-		} else {
-			if err := file.Download(workers, threads); err != nil {
-				panic(err)
-			}
-		}
+	if err != nil {
+		panic(err)
+	}
+	if err := file.Download(workers, threads, flag); err != nil {
+		cfmt.Printf("Error: %v\n", err)
 	}
 	if path != "" {
 		if err := file.Save(path); err != nil {

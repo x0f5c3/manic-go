@@ -27,12 +27,7 @@ type SumError struct {
 type FileNameError struct{}
 
 func (e *FileNameError) Error() string {
-	return cfmt.Sprintln("{{Error: No filename in the url, you probably provided a url pointing to a directory, not a file}}::red|blink")
-}
-type SingleChunk struct {
-	Data []byte
-	Val string
-	Offset int
+	return fmt.Sprintln("Error: No filename in the url, you probably provided a url pointing to a directory, not a file")
 }
 type File struct {
 	Url      string
@@ -45,10 +40,19 @@ type File struct {
 	bar      *mpb.Bar
 }
 
-func New(url, sha string, client *http.Client) (*File, error) {
-	length, err := GetLength(url, client)
-	if err != nil {
-		return nil, err
+func New(url string, sha string, client *http.Client, len *int) (*File, error) {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	var length int
+	if len == nil {
+		var err error
+		length, err = GetLength(url, client)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		length = *len
 	}
 	data := make([]byte, length)
 	file := File{
@@ -59,7 +63,7 @@ func New(url, sha string, client *http.Client) (*File, error) {
 		Client:   client,
 		Length:   length,
 	}
-	err = file.GetFilename()
+	err := file.GetFilename()
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +140,7 @@ func (c *File) DownloadChunk(val string, offset int) async.Future {
 					if err != nil {
 						promise.Failure(err)
 					} else {
-						single := SingleChunk{
+						single := chunk.SingleChunk{
 							Data: res,
 							Val: val,
 							Offset: offset,
@@ -148,7 +152,7 @@ func (c *File) DownloadChunk(val string, offset int) async.Future {
 					if err != nil {
 						promise.Failure(err)
 					} else {
-						single := SingleChunk{
+						single := chunk.SingleChunk{
 							Data: res,
 							Val: val,
 							Offset: offset,
@@ -162,9 +166,9 @@ func (c *File) DownloadChunk(val string, offset int) async.Future {
 	return promise.Future()
 }
 
-func (c *File) Download(workers, threads int) error {
+func (c *File) downloadInner(workers, threads int) error {
 	runtime.GOMAXPROCS(threads)
-	chnk, err := chunk.New(0, c.Length, c.Length/workers)
+	chnk, err := chunk.New(0, c.Length - 1, c.Length/workers)
 	var promises []async.Future
 	if err != nil {
 		return err
@@ -178,7 +182,7 @@ func (c *File) Download(workers, threads int) error {
 		if err != nil {
 			return err
 		}
-		convert := res.(SingleChunk)
+		convert := res.(chunk.SingleChunk)
 		startPos := convert.Offset
 		for _, dat := range convert.Data {
 			(*c.Data)[startPos] = dat
@@ -203,25 +207,27 @@ func (c *File) DownloadWithProgress(workers, threads int) error {
 		),
 	)
 	c.bar = bar
-	err := c.Download(workers, threads)
+	err := c.downloadInner(workers, threads)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (c *File) DownloadAndVerify(workers, threads int, progress bool) error {
+func (c *File) Download(workers, threads int, progress bool) error {
 	var err error
 	if progress {
 		err = c.DownloadWithProgress(workers, threads)
 	} else {
-		err = c.Download(workers, threads)
+		err = c.downloadInner(workers, threads)
 	}
 	if err != nil {
 		return err
 	}
-	shaErr := c.CompareSha()
-	if shaErr != nil {
-		return shaErr
+	if c.Sha != "" {
+		shaErr := c.CompareSha()
+		if shaErr != nil {
+			return shaErr
+	}
 	}
 	return nil
 }
