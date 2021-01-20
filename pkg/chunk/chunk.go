@@ -4,21 +4,14 @@ import (
 	"fmt"
 )
 
-type ChunkIter struct {
+type Chunks struct {
 	low        int
 	hi         int
 	chunkSize  int
 	next       string
 	currOffset int
-	currLen    int
-	Total      int
 }
 
-type Chunk struct {
-	Data   []byte
-	Offset int
-	Length int
-}
 type ChunkError struct {
 	What string
 }
@@ -27,21 +20,20 @@ func (e ChunkError) Error() string {
 	return fmt.Sprintf("Chunk error: %v\n", e.What)
 }
 
-func New(low int, hi int, chunkSize int, total int) (ChunkIter, error) {
-	var result *ChunkIter
+func New(low int, hi int, chunkSize int) (*Chunks, error) {
+	var result *Chunks
 	if chunkSize == 0 {
-		return *result, ChunkError{
+		return nil, ChunkError{
 			What: "Chunk size cannot be 0",
 		}
 	}
-	result = &ChunkIter{
+	result = &Chunks{
 		low:       low,
 		hi:        hi,
 		chunkSize: chunkSize,
 		next:      "",
-		Total:     total,
 	}
-	return *result, nil
+	return result, nil
 
 }
 func min(a, b int) int {
@@ -50,29 +42,18 @@ func min(a, b int) int {
 	}
 	return b
 }
-func (c *ChunkIter) Next() bool {
+func (c *Chunks) Next() bool {
 	if c.low > c.hi {
 		c.next = ""
 		return false
-	} else if c.low == c.hi {
-		c.next = fmt.Sprintf("bytes=%v-", c.hi)
-		c.currOffset = c.hi
-		c.currLen = c.Total - c.hi
-		// fmt.Printf("%v\n", c.next)
-		return true
 	} else {
 		prev_low := c.low
 		c.low += min(c.chunkSize, c.hi-c.low+1)
-		// fmt.Printf("Low: %v\n High: %v", prev_low, c.low-1)
-		c.next = fmt.Sprintf("bytes=%v-%v", prev_low, c.low-1)
+		c.next = fmt.Sprintf("bytes=%v-%v", prev_low, c.low)
 		c.currOffset = prev_low
-		c.currLen = (c.low - 1) - prev_low
 		return true
 	}
 }
-func (c *ChunkIter) Get() (int, string) {
+func (c *Chunks) Get() (int, string) {
 	return c.currOffset, c.next
-}
-func (c *ChunkIter) GetLength() int {
-	return c.currLen
 }

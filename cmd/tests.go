@@ -27,6 +27,7 @@ import (
 var workers int
 var check string
 var threads int
+var path string
 
 // testsCmd represents the tests command
 var testsCmd = &cobra.Command{
@@ -44,6 +45,8 @@ func init() {
 	testsCmd.Flags().IntVarP(&workers, "workers", "w", 3, "amount of concurrent workers")
 	testsCmd.Flags().IntVarP(&threads, "threads", "t", 2, "Maximum amount of threads")
 	testsCmd.Flags().StringVarP(&check, "check", "c", "", "Compare to a sha256sum")
+	testsCmd.Flags().StringVarP(&path, "output", "o", "", "Save to file")
+	testsCmd.Flags().BoolP("progress", "p", false, "Progress bar")
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -66,8 +69,27 @@ func download(cmd *cobra.Command, args []string) {
 	if err := file.Download(workers, threads); err != nil {
 		cfmt.Printf("Error: %v\n", err)
 	}
+	flag, err := cmd.Flags().GetBool("progress")
 	if check != "" {
-		if err := file.CompareSha(); err != nil {
+		if err != nil {
+			panic(err)
+		}
+		if err := file.DownloadAndVerify(workers, threads, flag); err != nil {
+			panic(err)
+		}
+	} else {
+		if flag {
+			if err := file.DownloadWithProgress(workers, threads); err != nil {
+				panic(err)
+			}
+		} else {
+			if err := file.Download(workers, threads); err != nil {
+				panic(err)
+			}
+		}
+	}
+	if path != "" {
+		if err := file.Save(path); err != nil {
 			fmt.Printf("Error: %v\n", err)
 		}
 	}
