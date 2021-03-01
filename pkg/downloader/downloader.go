@@ -122,7 +122,7 @@ func (c *File) CompareSha() error {
 	}
 }
 
-func (c *File) DownloadChunk(val string, offset int) async.Future {
+func (c *File) DownloadChunk(val string, offset int, bar *mpb.Bar) async.Future {
 	promise := async.NewPromise()
 	go func() {
 		req, err := http.NewRequest("GET", c.Url, nil)
@@ -135,19 +135,22 @@ func (c *File) DownloadChunk(val string, offset int) async.Future {
 				promise.Failure(err)
 			} else {
 				if c.bar != nil {
-					reader := c.bar.ProxyReader(resp.Body)
-					res, err := ioutil.ReadAll(reader)
-					if err != nil {
-						promise.Failure(err)
-					} else {
-						single := chunk.SingleChunk{
-							Data: res,
-							Val: val,
-							Offset: offset,
+					if bar != nil {
+						reader := bar.ProxyReader(resp.Body)
+						res, err := ioutil.ReadAll(reader)
+						if err != nil {
+							promise.Failure(err)
+						} else {
+							single := chunk.SingleChunk{
+								Data:   res,
+								Val:    val,
+								Offset: offset,
+							}
+							c.bar.IncrBy(len(res))
+							promise.Success(single)
 						}
-						promise.Success(single)
 					}
-				} else {
+				}else {
 					res, err := ioutil.ReadAll(resp.Body)
 					if err != nil {
 						promise.Failure(err)
@@ -166,7 +169,7 @@ func (c *File) DownloadChunk(val string, offset int) async.Future {
 	return promise.Future()
 }
 
-func (c *File) downloadInner(workers, threads int) error {
+func (c *File) downloadInner(workers, threads int, progress *mpb.Progress) error {
 	runtime.GOMAXPROCS(threads)
 	chnk, err := chunk.New(0, c.Length - 1, c.Length/workers)
 	var promises []async.Future
@@ -174,8 +177,24 @@ func (c *File) downloadInner(workers, threads int) error {
 		return err
 	}
 	for chnk.Next() {
-		off, val := chnk.Get()
-		promises = append(promises, c.DownloadChunk(val, off))
+		off, l, val := chnk.Get()
+		if progress != nil {
+			name := fmt.Sprintf("Chunk offset: %d", off)
+			bar := progress.AddBar(int64(l),
+				mpb.BarStyle("╢▌▌░╟"),
+				mpb.PrependDecorators(
+					decor.Name(name, decor.WC{W: 30, C: decor.DidentRight}),
+					),
+				mpb.AppendDecorators(
+					decor.AverageETA(decor.ET_STYLE_GO, decor.WC{W: 4}),
+					decor.AverageSpeed(decor.UnitKB, "  % .2f  ", decor.WC{W: 5}),
+					decor.Percentage(),
+				),
+			)
+			promises = append(promises, c.DownloadChunk(val, off, bar))
+		} else {
+			promises = append(promises, c.DownloadChunk(val, off, nil))
+		}
 	}
 	for _, fut := range promises {
 		res, err := fut.Get()
@@ -198,7 +217,7 @@ func (c *File) DownloadWithProgress(workers, threads int) error {
 	bar := p.AddBar(int64(c.Length),
 		mpb.BarStyle("╢▌▌░╟"),
 		mpb.PrependDecorators(
-			decor.Name(name, decor.WC{W: len(name) + 1, C: decor.DidentRight}),
+			decor.Name(name, decor.WC{W: 30, C: decor.DidentRight}),
 		),
 		mpb.AppendDecorators(
 			decor.AverageETA(decor.ET_STYLE_GO, decor.WC{W: 4}),
@@ -207,7 +226,7 @@ func (c *File) DownloadWithProgress(workers, threads int) error {
 		),
 	)
 	c.bar = bar
-	err := c.downloadInner(workers, threads)
+	err := c.downloadInner(workers, threads, p)
 	if err != nil {
 		return err
 	}
@@ -218,7 +237,7 @@ func (c *File) Download(workers, threads int, progress bool) error {
 	if progress {
 		err = c.DownloadWithProgress(workers, threads)
 	} else {
-		err = c.downloadInner(workers, threads)
+		err = c.downloadInner(workers, threads, nil)
 	}
 	if err != nil {
 		return err

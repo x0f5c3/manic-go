@@ -10,6 +10,7 @@ type Chunks struct {
 	chunkSize  int
 	next       string
 	currOffset int
+	currLength int
 }
 
 type ChunkError struct {
@@ -37,6 +38,7 @@ func New(low int, hi int, chunkSize int) (*Chunks, error) {
 		hi:        hi,
 		chunkSize: chunkSize,
 		next:      "",
+		currLength: 0,
 	}
 	return result, nil
 
@@ -56,9 +58,10 @@ func (c *Chunks) Next() bool {
 		c.low += min(c.chunkSize, c.hi-c.low+1)
 		c.next = fmt.Sprintf("bytes=%v-%v", prev_low, c.low)
 		c.currOffset = prev_low
+		c.currLength = c.low - prev_low
 		return true
 	}
 }
-func (c *Chunks) Get() (int, string) {
-	return c.currOffset, c.next
+func (c *Chunks) Get() (int, int, string) {
+	return c.currOffset, c.currLength, c.next
 }
