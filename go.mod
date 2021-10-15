@@ -1,6 +1,6 @@
 module github.com/x0f5c3/manic-go
 
-go 1.15
+go 1.17.2
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.2.7

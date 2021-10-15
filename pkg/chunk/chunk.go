@@ -13,7 +13,7 @@ type Chunks struct {
 	currLength int
 }
 
-type ChunkError struct {
+type Error struct {
 	What string
 }
 
@@ -22,14 +22,14 @@ type SingleChunk struct {
 	Val string
 	Offset int
 }
-func (e ChunkError) Error() string {
+func (e Error) Error() string {
 	return fmt.Sprintf("Chunk error: %v\n", e.What)
 }
 
 func New(low int, hi int, chunkSize int) (*Chunks, error) {
 	var result *Chunks
 	if chunkSize == 0 {
-		return nil, ChunkError{
+		return nil, Error{
 			What: "Chunk size cannot be 0",
 		}
 	}
@@ -54,11 +54,11 @@ func (c *Chunks) Next() bool {
 		c.next = ""
 		return false
 	} else {
-		prev_low := c.low
+		prevLow := c.low
 		c.low += min(c.chunkSize, c.hi-c.low+1)
-		c.next = fmt.Sprintf("bytes=%v-%v", prev_low, c.low)
-		c.currOffset = prev_low
-		c.currLength = c.low - prev_low
+		c.next = fmt.Sprintf("bytes=%v-%v", prevLow, c.low)
+		c.currOffset = prevLow
+		c.currLength = c.low - prevLow
 		return true
 	}
 }
