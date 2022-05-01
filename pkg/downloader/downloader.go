@@ -9,7 +9,7 @@ import (
 
 	"bytes"
 	"encoding/hex"
-	"github.com/i582/cfmt"
+	"github.com/i582/cfmt/cmd/cfmt"
 	"github.com/reugn/async"
 	"github.com/vbauerster/mpb/v5"
 	"github.com/vbauerster/mpb/v5/decor"
@@ -29,6 +29,7 @@ type FileNameError struct{}
 func (e *FileNameError) Error() string {
 	return fmt.Sprintln("Error: No filename in the url, you probably provided a url pointing to a directory, not a file")
 }
+
 type File struct {
 	Url      string
 	FileName string
@@ -73,7 +74,7 @@ func (c *SumError) Error() string {
 	return fmt.Sprintf("Error!!! Sha256 mismatch\nReference: %v\nData: %v\n", c.Reference, c.Data)
 }
 
-func(c *File) Save(path string) error {
+func (c *File) Save(path string) error {
 	return ioutil.WriteFile(path, *c.Data, 0644)
 }
 func GetLength(url string, client *http.Client) (int, error) {
@@ -122,14 +123,14 @@ func (c *File) CompareSha() error {
 	}
 }
 
-func (c *File) DownloadChunk(val string, offset int, bar *mpb.Bar) async.Future {
+func (c *File) DownloadChunk(chunk chunk.SingleChunk, bar *mpb.Bar) async.Future {
 	promise := async.NewPromise()
 	go func() {
 		req, err := http.NewRequest("GET", c.Url, nil)
 		if err != nil {
 			promise.Failure(err)
 		} else {
-			req.Header.Add("RANGE", val)
+			req.Header.Add("RANGE", chunk.Val)
 			resp, err := c.Client.Do(req)
 			if err != nil {
 				promise.Failure(err)
@@ -141,26 +142,18 @@ func (c *File) DownloadChunk(val string, offset int, bar *mpb.Bar) async.Future 
 						if err != nil {
 							promise.Failure(err)
 						} else {
-							single := chunk.SingleChunk{
-								Data:   res,
-								Val:    val,
-								Offset: offset,
-							}
+							chunk.Data = res
 							c.bar.IncrBy(len(res))
-							promise.Success(single)
+							promise.Success(chunk)
 						}
 					}
-				}else {
+				} else {
 					res, err := ioutil.ReadAll(resp.Body)
 					if err != nil {
 						promise.Failure(err)
 					} else {
-						single := chunk.SingleChunk{
-							Data: res,
-							Val: val,
-							Offset: offset,
-						}
-						promise.Success(single)
+						chunk.Data = res
+						promise.Success(chunk)
 					}
 				}
 			}
@@ -171,29 +164,29 @@ func (c *File) DownloadChunk(val string, offset int, bar *mpb.Bar) async.Future 
 
 func (c *File) downloadInner(workers, threads int, progress *mpb.Progress) error {
 	runtime.GOMAXPROCS(threads)
-	chnk, err := chunk.New(0, c.Length - 1, c.Length/workers)
+	chnk, err := chunk.New(0, c.Length-1, c.Length/workers)
 	var promises []async.Future
 	if err != nil {
 		return err
 	}
 	for chnk.Next() {
-		off, l, val := chnk.Get()
+		next := chnk.Get()
 		if progress != nil {
-			name := fmt.Sprintf("Chunk offset: %d", off)
-			bar := progress.AddBar(int64(l),
+			name := fmt.Sprintf("Chunk offset: %d", next.Offset)
+			bar := progress.AddBar(int64(next.Length),
 				mpb.BarStyle("╢▌▌░╟"),
 				mpb.PrependDecorators(
 					decor.Name(name, decor.WC{W: 30, C: decor.DidentRight}),
-					),
+				),
 				mpb.AppendDecorators(
 					decor.AverageETA(decor.ET_STYLE_GO, decor.WC{W: 4}),
 					decor.AverageSpeed(decor.UnitKB, "  % .2f  ", decor.WC{W: 5}),
 					decor.Percentage(),
 				),
 			)
-			promises = append(promises, c.DownloadChunk(val, off, bar))
+			promises = append(promises, c.DownloadChunk(next, bar))
 		} else {
-			promises = append(promises, c.DownloadChunk(val, off, nil))
+			promises = append(promises, c.DownloadChunk(next, nil))
 		}
 	}
 	for _, fut := range promises {
@@ -246,7 +239,7 @@ func (c *File) Download(workers, threads int, progress bool) error {
 		shaErr := c.CompareSha()
 		if shaErr != nil {
 			return shaErr
-	}
+		}
 	}
 	return nil
 }

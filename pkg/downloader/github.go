@@ -51,7 +51,10 @@ func AskForRelease(repo string) (*File, error) {
 		Message: "Choose a release:",
 		Options: names,
 	}
-	survey.AskOne(prompt, &chosenName)
+	err = survey.AskOne(prompt, &chosenName)
+	if err != nil {
+		return nil, err
+	}
 	chosenRelease := tags[chosenName]
 	assets := make(map[string]*github.ReleaseAsset)
 	var assetNames []string
@@ -65,10 +68,12 @@ func AskForRelease(repo string) (*File, error) {
 		Message: "Choose an asset:",
 		Options: assetNames,
 	}
-	survey.AskOne(assetPrompt, &chosenAsset)
+	err = survey.AskOne(assetPrompt, &chosenAsset)
+	if err != nil {
+		return nil, err
+	}
 	chosenAssets := assets[chosenAsset]
 	size := chosenAssets.GetSize()
 	url := chosenAssets.GetBrowserDownloadURL()
 	return New(url, "", nil, &size)
 }
-
