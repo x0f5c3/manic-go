@@ -3,6 +3,7 @@ package downloader
 import (
 	"crypto/sha256"
 	"fmt"
+	"github.com/vbauerster/mpb/v7"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -11,8 +12,7 @@ import (
 	"encoding/hex"
 	"github.com/i582/cfmt/cmd/cfmt"
 	"github.com/reugn/async"
-	"github.com/vbauerster/mpb/v5"
-	"github.com/vbauerster/mpb/v5/decor"
+	"github.com/vbauerster/mpb/v7/decor"
 	"github.com/x0f5c3/manic-go/pkg/chunk"
 	"net/url"
 	"path"
@@ -173,8 +173,8 @@ func (c *File) downloadInner(workers, threads int, progress *mpb.Progress) error
 		next := chnk.Get()
 		if progress != nil {
 			name := fmt.Sprintf("Chunk offset: %d", next.Offset)
-			bar := progress.AddBar(int64(next.Length),
-				mpb.BarStyle("╢▌▌░╟"),
+			bar := progress.New(int64(next.Length),
+				mpb.BarStyle().Lbound("╢").Filler(cfmt.Sprintf("{{▌}}::green")).Tip(cfmt.Sprintf("{{▌}}::green")).Padding("░").Rbound("╟"),
 				mpb.PrependDecorators(
 					decor.Name(name, decor.WC{W: 30, C: decor.DidentRight}),
 				),
@@ -207,8 +207,8 @@ func (c *File) downloadInner(workers, threads int, progress *mpb.Progress) error
 func (c *File) DownloadWithProgress(workers, threads int) error {
 	name := cfmt.Sprintf("{{Downloading %s}}::magenta|blink", c.FileName)
 	p := mpb.New(mpb.WithWidth(64))
-	bar := p.AddBar(int64(c.Length),
-		mpb.BarStyle("╢▌▌░╟"),
+	bar := p.New(int64(c.Length),
+		mpb.BarStyle().Lbound("╢").Filler(cfmt.Sprintf("{{▌}}::green")).Tip(cfmt.Sprintf("{{▌}}::green")).Padding("░").Rbound("╟"),
 		mpb.PrependDecorators(
 			decor.Name(name, decor.WC{W: 30, C: decor.DidentRight}),
 		),

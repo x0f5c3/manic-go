@@ -48,14 +48,14 @@ func download(cmd *cobra.Command, args []string) {
 	client := http.Client{}
 	file, err := downloader.New(url, check, &client, nil)
 	if err != nil {
-		cfmt.Printf("%v", err)
+		_, _ = cfmt.Printf("%v", err)
 	}
 	flag, err := cmd.Flags().GetBool("progress")
 	if err != nil {
 		panic(err)
 	}
 	if err := file.Download(workers, threads, flag); err != nil {
-		cfmt.Printf("Error: %v\n", err)
+		_, _ = cfmt.Printf("Error: %v\n", err)
 	}
 	if path != "" {
 		if err := file.Save(path); err != nil {
