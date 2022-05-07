@@ -1,10 +1,9 @@
-# cli-template
+# manic-go
 
-> This cli template shows the date and time in the terminal
+> Program intended to be a port of my manic library but also with a cli
 
-This is a template CLI application, which can be used as a boilerplate for awesome CLI tools written in Go.
-This template prints the date or time to the terminal.
+Port of my manic library but with a cli, the same is planned for the rust version soon
 
 [Installation](installation.md)
 [Docs](docs.md)
-[GitHub](https://github.com/x0f5c3/tl-dl)
+[GitHub](https://github.com/x0f5c3/manic-go)

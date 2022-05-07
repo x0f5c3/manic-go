@@ -10,12 +10,9 @@ require (
 	github.com/pterm/pterm v0.12.41
 	github.com/reugn/async v0.0.0-20200819063434-15e5b3951cd7
 	github.com/spf13/cobra v1.1.3
-	github.com/vbauerster/mpb/v7 v7.4.1
 )
 
 require (
-	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/atomicgo/cursor v0.0.1 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/gookit/color v1.5.0 // indirect
