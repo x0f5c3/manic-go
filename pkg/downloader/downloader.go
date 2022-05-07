@@ -111,7 +111,7 @@ func (c *File) CompareSha() error {
 		return err
 	}
 	if bytes.Compare(sum[:32], byted[:32]) == 0 {
-		pterm.Success.Println(pterm.Bold.Sprint(pterm.FgGreen.Sprintf("Successfully downloaded file: %s\n", c.FileName)))
+		pterm.Success.Println(pterm.Bold.Sprint(pterm.FgGreen.Sprintf("Successfully downloaded file: %s", c.FileName)))
 		return nil
 	}
 	return &SumError{
