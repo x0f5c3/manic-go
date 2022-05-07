@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/pterm/pcli"
 	"github.com/pterm/pterm"
@@ -14,7 +14,7 @@ var rootCmd = &cobra.Command{
 	Use:     "manic-go",
 	Short:   "Program intended to be a port of my manic library but also with a cli",
 	Long:    `Port of my manic library but with a cli, the same is planned for the rust version soon`,
-	Version: "0.3.0", // <---VERSION---> Updating this version, will also create a new GitHub release.
+	Version: "0.4.0", // <---VERSION---> Updating this version, will also create a new GitHub release.
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -23,14 +23,33 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		pterm.Warning.Println("user interrupt")
+		handleUpdate()
+		os.Exit(0)
+	}()
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		pterm.Error.Println(err)
+		handleUpdate()
+		os.Exit(1)
+	}
+	handleUpdate()
+}
+
+func handleUpdate() {
+	err := pcli.CheckForUpdates()
+	if err != nil {
+		pterm.Error.Printf("Update check failed: %s\n", err)
 		os.Exit(1)
 	}
 }
-
 func init() {
-	cobra.OnInitialize()
+	rootCmd.PersistentFlags().BoolVarP(&pterm.PrintDebugMessages, "debug", "", false, "enable debug messages")
+	rootCmd.PersistentFlags().BoolVarP(&pterm.RawOutput, "raw", "", false, "print unstyled raw output (set it if output is written to a file)")
+	rootCmd.PersistentFlags().BoolVarP(&pcli.DisableUpdateChecking, "disable-update-checks", "", false, "disables update checks")
 
 	_ = pcli.SetRepo("x0f5c3/manic-go")
 	pcli.SetRootCmd(rootCmd)

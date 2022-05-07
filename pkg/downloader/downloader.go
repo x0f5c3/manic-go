@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/i582/cfmt/cmd/cfmt"
 	"github.com/pterm/pterm"
 	"github.com/reugn/async"
 	"github.com/x0f5c3/manic-go/pkg/chunk"
@@ -104,7 +103,7 @@ func (c *File) GetFilename() error {
 }
 
 func (c *File) CompareSha() error {
-	_, _ = cfmt.Println("{{Comparing SHA256 sums}}::magenta|bold")
+	pterm.Debug.Print(pterm.Bold.Sprintln(pterm.FgMagenta.Sprint("Comparing SHA256 sums")))
 	sum := sha256.Sum256(*c.Data)
 	byted, err := hex.DecodeString(c.Sha)
 	refstring := hex.EncodeToString(sum[:32])
@@ -112,10 +111,9 @@ func (c *File) CompareSha() error {
 		return err
 	}
 	if bytes.Compare(sum[:32], byted[:32]) == 0 {
-		_, _ = cfmt.Printf("{{Successfully downloaded file: %s\n}}::green|bold", c.FileName)
+		pterm.Success.Println(pterm.Bold.Sprint(pterm.FgGreen.Sprintf("Successfully downloaded file: %s\n", c.FileName)))
 		return nil
 	}
-	fmt.Println("Len:", len(byted))
 	return &SumError{
 		Reference: c.Sha,
 		Data:      refstring,
@@ -185,7 +183,7 @@ func (c *File) downloadInner(workers, threads int) error {
 }
 
 func (c *File) DownloadWithProgress(workers, threads int) error {
-	name := cfmt.Sprintf("{{Downloading %s}}::magenta|blink", c.FileName)
+	name := pterm.Blink.Sprint(pterm.FgMagenta.Sprintf("Downloading %s", c.FileName))
 	bar, err := pterm.DefaultProgressbar.WithTotal(c.Length).WithTitle(name).Start()
 	if err != nil {
 		return err
@@ -195,7 +193,8 @@ func (c *File) DownloadWithProgress(workers, threads int) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	_, err = c.bar.Stop()
+	return err
 }
 func (c *File) Download(workers, threads int, progress bool) error {
 	var err error
