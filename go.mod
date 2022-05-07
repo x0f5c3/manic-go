@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/AlecAivazis/survey/v2 v2.2.7
 	github.com/google/go-github/v33 v33.0.0
-	github.com/i582/cfmt v1.4.0
 	github.com/pterm/pcli v0.4.6
 	github.com/pterm/pterm v0.12.41
 	github.com/reugn/async v0.0.0-20200819063434-15e5b3951cd7

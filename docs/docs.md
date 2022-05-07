@@ -11,6 +11,13 @@ manic-go
 Port of my manic library but with a cli, the same is planned for the rust version soon
 ```
 
+## Flags
+|Flag|Usage|
+|----|-----|
+|`--debug`|enable debug messages|
+|`--disable-update-checks`|disables update checks|
+|`--raw`|print unstyled raw output (set it if output is written to a file)|
+
 ## Commands
 |Command|Usage|
 |-------|-----|
