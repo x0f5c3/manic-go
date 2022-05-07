@@ -1,5 +1,5 @@
 <h1 align="center">manic-go</h1>
-<p align="center">A tool and a library to download files fast</p>
+<p align="center">Program intended to be a port of my manic library but also with a cli</p>
 
 <p align="center">
 
@@ -49,8 +49,7 @@
 
 ----
 
-This is a template CLI application, which can be used as a boilerplate for awesome CLI tools written in Go.
-This template prints the date or time to the terminal.
+Port of my manic library but with a cli, the same is planned for the rust version soon
 
 ## Installation
 
