@@ -3,7 +3,7 @@ module github.com/x0f5c3/manic-go
 go 1.18
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.2.7
+	github.com/AlecAivazis/survey/v2 v2.3.4
 	github.com/google/go-github/v33 v33.0.0
 	github.com/pterm/pcli v0.4.6
 	github.com/pterm/pterm v0.12.41
@@ -30,5 +30,5 @@ require (
 	golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5 // indirect
 	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/text v0.3.3 // indirect
 )
