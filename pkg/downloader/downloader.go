@@ -103,7 +103,7 @@ func (c *File) GetFilename() error {
 }
 
 func (c *File) CompareSha() error {
-	pterm.Debug.Print(pterm.Bold.Sprintln(pterm.FgMagenta.Sprint("Comparing SHA256 sums")))
+	pterm.Debug.Println(pterm.Bold.Sprint(pterm.FgMagenta.Sprint("Comparing SHA256 sums")))
 	sum := sha256.Sum256(*c.Data)
 	byted, err := hex.DecodeString(c.Sha)
 	refstring := hex.EncodeToString(sum[:32])
