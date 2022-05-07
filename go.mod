@@ -9,7 +9,7 @@ require (
 	github.com/pterm/pcli v0.4.6
 	github.com/pterm/pterm v0.12.41
 	github.com/reugn/async v0.0.0-20200819063434-15e5b3951cd7
-	github.com/spf13/cobra v1.1.3
+	github.com/spf13/cobra v1.4.0
 )
 
 require (
