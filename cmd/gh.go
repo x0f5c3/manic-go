@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/x0f5c3/manic-go/pkg/downloader"
 )
@@ -15,7 +16,7 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: run,
+	RunE: run,
 }
 
 func init() {
@@ -32,7 +33,7 @@ func init() {
 	// is called directly, e.g.:
 	// ghCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-func run(cmd *cobra.Command, args []string) {
+func run(cmd *cobra.Command, args []string) error {
 	repo := args[0]
 	interactive, err := cmd.Flags().GetBool("interactive")
 	if err != nil {
@@ -43,18 +44,21 @@ func run(cmd *cobra.Command, args []string) {
 		var err error
 		file, err = downloader.AskForRelease(repo)
 		if err != nil {
-			panic(err)
+			pterm.Error.Println(err)
+			return err
 		}
 	} else {
 		var err error
 		file, err = downloader.LatestRelease(repo)
 		if err != nil {
-			panic(err)
+			pterm.Error.Println(err)
+			return err
 		}
 	}
 	err = file.Download(3, 2, true)
 	if err != nil {
-		panic(err)
+		pterm.Error.Println(err)
+		return err
 	}
-
+	return nil
 }

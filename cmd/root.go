@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pterm/pcli"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "manic-go",
-	Short: "Program intended to be a port of my manic library but also with a cli",
-	Long:  `Port of my manic library but with a cli, the same is planned for the rust version soon`,
+	Use:     "manic-go",
+	Short:   "Program intended to be a port of my manic library but also with a cli",
+	Long:    `Port of my manic library but with a cli, the same is planned for the rust version soon`,
+	Version: "0.2.0", // <---VERSION---> Updating this version, will also create a new GitHub release.
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -29,6 +32,12 @@ func Execute() {
 func init() {
 	cobra.OnInitialize()
 
+	_ = pcli.SetRepo("x0f5c3/manic-go")
+	pcli.SetRootCmd(rootCmd)
+	pcli.Setup()
+
+	// Change global PTerm theme
+	pterm.ThemeDefault.SectionStyle = *pterm.NewStyle(pterm.FgCyan)
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.

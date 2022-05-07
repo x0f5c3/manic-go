@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/i582/cfmt/cmd/cfmt"
+	"github.com/pterm/pterm"
 	"net/http"
 
 	"github.com/spf13/cobra"
@@ -22,7 +21,7 @@ var testsCmd = &cobra.Command{
 	To use it, pass it the url and optionally workers and a sha256sum to compare with
 	By default amount of workers is 2`,
 	Args: cobra.MinimumNArgs(1),
-	Run:  download,
+	RunE: download,
 }
 
 func init() {
@@ -43,24 +42,27 @@ func init() {
 	// testsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func download(cmd *cobra.Command, args []string) {
+func download(cmd *cobra.Command, args []string) error {
 	url := args[0]
 	client := http.Client{}
 	file, err := downloader.New(url, check, &client, nil)
 	if err != nil {
-		_, _ = cfmt.Printf("%v", err)
+		pterm.Error.Printf("%v", err)
+		return err
 	}
 	flag, err := cmd.Flags().GetBool("progress")
 	if err != nil {
 		panic(err)
 	}
 	if err := file.Download(workers, threads, flag); err != nil {
-		_, _ = cfmt.Printf("Error: %v\n", err)
+		pterm.Error.Printf("Error: %v\n", err)
+		return err
 	}
 	if path != "" {
 		if err := file.Save(path); err != nil {
-			fmt.Printf("Error: %v\n", err)
+			pterm.Error.Printf("Error: %v\n", err)
+			return err
 		}
 	}
-
+	return nil
 }
