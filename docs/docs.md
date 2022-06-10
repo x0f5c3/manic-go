@@ -21,9 +21,27 @@ Port of my manic library but with a cli, the same is planned for the rust versio
 ## Commands
 |Command|Usage|
 |-------|-----|
+|`manic-go download`|Download file over HTTP|
 |`manic-go gh`|A brief description of your command|
 |`manic-go help`|Help about any command|
 |`manic-go tests`|Testing downloading|
+# ... download
+`manic-go download`
+
+## Usage
+> Download file over HTTP
+
+manic-go download
+
+## Flags
+|Flag|Usage|
+|----|-----|
+|`-c, --check string`|Compare to a sha256sum|
+|`-o, --output string`|Save to file|
+|`-p, --progress`|Progress bar|
+|`-t, --threads int`|Maximum amount of threads (default 2)|
+|`-T, --timeout int`|Set I/O and connection timeout (default 30)|
+|`-w, --workers int`|amount of concurrent workers (default 3)|
 # ... gh
 `manic-go gh`
 
@@ -88,4 +106,4 @@ Command used for testing the program.
 
 
 ---
-> **Documentation automatically generated with [PTerm](https://github.com/pterm/cli-template) on 07 May 2022**
+> **Documentation automatically generated with [PTerm](https://github.com/pterm/cli-template) on 10 June 2022**
