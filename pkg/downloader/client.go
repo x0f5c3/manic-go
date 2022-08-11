@@ -45,8 +45,8 @@ func fromAddr(addr net.Addr) Addr {
 }
 
 type Response struct {
-	headers map[string]string
-	body    []byte
+	Headers map[string]string
+	Body    []byte
 	laddr   net.Addr
 	raddr   net.Addr
 }
@@ -65,8 +65,8 @@ func fromResponse(response *fasthttp.Response) (*Response, error) {
 	laddr := fromAddr(response.LocalAddr())
 	raddr := fromAddr(response.RemoteAddr())
 	return &Response{
-		headers: heads,
-		body:    body,
+		Headers: heads,
+		Body:    body,
 		laddr:   laddr,
 		raddr:   raddr,
 	}, nil

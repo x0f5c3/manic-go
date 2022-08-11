@@ -145,7 +145,7 @@ func GetLength(url string, client *Client) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	rawString, ok := resp.headers["Content-Length"]
+	rawString, ok := resp.Headers["Content-Length"]
 	if rawString == "" || !ok {
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
@@ -156,7 +156,7 @@ func GetLength(url string, client *Client) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		rawString, ok = resp.headers["Content-Length"]
+		rawString, ok = resp.Headers["Content-Length"]
 		if rawString == "" || !ok {
 			return 0, errors.New("can't retrieve length")
 		}
@@ -192,9 +192,9 @@ func (c *File) DownloadChunk(chunk chunk.SingleChunk) (*chunk.SingleChunk, error
 		// if err != nil {
 		// 	return nil, err
 		// } else {
-		copy(chunk.Data, resp.body)
+		copy(chunk.Data, resp.Body)
 		if c.bar != nil {
-			c.bar.Add(len(resp.body))
+			c.bar.Add(len(resp.Body))
 		}
 		return &chunk, nil
 	}
