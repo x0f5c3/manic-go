@@ -45,9 +45,9 @@ func runDownload(_ *cobra.Command, args []string) error {
 	// 		return cl, nil
 	// 	}
 	// }()
-	if err != nil {
-		return err
-	}
+	// if err != nil {
+	// 	return err
+	// }
 	dl, err := downloader.New(args[0], check, nil, nil)
 	if err != nil {
 		return err

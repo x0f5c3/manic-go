@@ -1,4 +1,4 @@
-//go:build linux || freebsd || dragonfly || darwin
+//go:build unix
 
 package downloader
 
@@ -99,12 +99,12 @@ func DialTimeout(addr string, timeout time.Duration) (net.Conn, error) {
 //
 // This function has the following additional features comparing to net.Dial:
 //
-//   * It reduces load on DNS resolver by caching resolved TCP addressed
+//   - It reduces load on DNS resolver by caching resolved TCP addressed
 //     for DNSCacheDuration.
-//   * It dials all the resolved TCP addresses in round-robin manner until
+//   - It dials all the resolved TCP addresses in round-robin manner until
 //     connection is established. This may be useful if certain addresses
 //     are temporarily unreachable.
-//   * It returns ErrDialTimeout if connection cannot be established during
+//   - It returns ErrDialTimeout if connection cannot be established during
 //     DefaultDialTimeout seconds. Use DialDualStackTimeout for custom dial
 //     timeout.
 //
@@ -116,9 +116,9 @@ func DialTimeout(addr string, timeout time.Duration) (net.Conn, error) {
 //
 // The addr passed to the function must contain port. Example addr values:
 //
-//     * foobar.baz:443
-//     * foo.bar:80
-//     * aaa.com:8080
+//   - foobar.baz:443
+//   - foo.bar:80
+//   - aaa.com:8080
 func DialDualStack(addr string) (net.Conn, error) {
 	return defaultDialer.dial(addr, true, DefaultDialTimeout)
 }
@@ -128,9 +128,9 @@ func DialDualStack(addr string) (net.Conn, error) {
 //
 // This function has the following additional features comparing to net.Dial:
 //
-//   * It reduces load on DNS resolver by caching resolved TCP addressed
+//   - It reduces load on DNS resolver by caching resolved TCP addressed
 //     for DNSCacheDuration.
-//   * It dials all the resolved TCP addresses in round-robin manner until
+//   - It dials all the resolved TCP addresses in round-robin manner until
 //     connection is established. This may be useful if certain addresses
 //     are temporarily unreachable.
 //
@@ -142,9 +142,9 @@ func DialDualStack(addr string) (net.Conn, error) {
 //
 // The addr passed to the function must contain port. Example addr values:
 //
-//     * foobar.baz:443
-//     * foo.bar:80
-//     * aaa.com:8080
+//   - foobar.baz:443
+//   - foo.bar:80
+//   - aaa.com:8080
 func DialDualStackTimeout(addr string, timeout time.Duration) (net.Conn, error) {
 	return defaultDialer.dial(addr, true, timeout)
 }
@@ -175,8 +175,7 @@ var GNetResolver = func(cl *gnet.Client) *net.Resolver {
 		PreferGo:     true,
 		StrictErrors: false,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			d := &net.Dialer{}
-			conn, err := d.DialContext(ctx, network, address)
+			conn, err := defaultDialer.DialContext(ctx, network, address)
 			err = checkDialError(ctx, err)
 			if err != nil {
 				return nil, err
@@ -239,12 +238,12 @@ func NewDialer(opts *DialerOptions, GNetOpts ...gnet.Option) (*GNetDialer, error
 //
 // This function has the following additional features comparing to net.Dial:
 //
-//   * It reduces load on DNS resolver by caching resolved TCP addressed
+//   - It reduces load on DNS resolver by caching resolved TCP addressed
 //     for DNSCacheDuration.
-//   * It dials all the resolved TCP addresses in round-robin manner until
+//   - It dials all the resolved TCP addresses in round-robin manner until
 //     connection is established. This may be useful if certain addresses
 //     are temporarily unreachable.
-//   * It returns ErrDialTimeout if connection cannot be established during
+//   - It returns ErrDialTimeout if connection cannot be established during
 //     DefaultDialTimeout seconds. Use DialTimeout for customizing dial timeout.
 //
 // This dialer is intended for custom code wrapping before passing
@@ -255,9 +254,9 @@ func NewDialer(opts *DialerOptions, GNetOpts ...gnet.Option) (*GNetDialer, error
 //
 // The addr passed to the function must contain port. Example addr values:
 //
-//     * foobar.baz:443
-//     * foo.bar:80
-//     * aaa.com:8080
+//   - foobar.baz:443
+//   - foo.bar:80
+//   - aaa.com:8080
 func (d *GNetDialer) Dial(addr string) (net.Conn, error) {
 	return d.dial(addr, false, DefaultDialTimeout)
 }
@@ -266,9 +265,9 @@ func (d *GNetDialer) Dial(addr string) (net.Conn, error) {
 //
 // This function has the following additional features comparing to net.Dial:
 //
-//   * It reduces load on DNS resolver by caching resolved TCP addressed
+//   - It reduces load on DNS resolver by caching resolved TCP addressed
 //     for DNSCacheDuration.
-//   * It dials all the resolved TCP addresses in round-robin manner until
+//   - It dials all the resolved TCP addresses in round-robin manner until
 //     connection is established. This may be useful if certain addresses
 //     are temporarily unreachable.
 //
@@ -280,9 +279,9 @@ func (d *GNetDialer) Dial(addr string) (net.Conn, error) {
 //
 // The addr passed to the function must contain port. Example addr values:
 //
-//     * foobar.baz:443
-//     * foo.bar:80
-//     * aaa.com:8080
+//   - foobar.baz:443
+//   - foo.bar:80
+//   - aaa.com:8080
 func (d *GNetDialer) DialTimeout(addr string, timeout time.Duration) (net.Conn, error) {
 	return d.dial(addr, false, timeout)
 }
@@ -291,12 +290,12 @@ func (d *GNetDialer) DialTimeout(addr string, timeout time.Duration) (net.Conn, 
 //
 // This function has the following additional features comparing to net.Dial:
 //
-//   * It reduces load on DNS resolver by caching resolved TCP addressed
+//   - It reduces load on DNS resolver by caching resolved TCP addressed
 //     for DNSCacheDuration.
-//   * It dials all the resolved TCP addresses in round-robin manner until
+//   - It dials all the resolved TCP addresses in round-robin manner until
 //     connection is established. This may be useful if certain addresses
 //     are temporarily unreachable.
-//   * It returns ErrDialTimeout if connection cannot be established during
+//   - It returns ErrDialTimeout if connection cannot be established during
 //     DefaultDialTimeout seconds. Use DialDualStackTimeout for custom dial
 //     timeout.
 //
@@ -308,9 +307,9 @@ func (d *GNetDialer) DialTimeout(addr string, timeout time.Duration) (net.Conn, 
 //
 // The addr passed to the function must contain port. Example addr values:
 //
-//     * foobar.baz:443
-//     * foo.bar:80
-//     * aaa.com:8080
+//   - foobar.baz:443
+//   - foo.bar:80
+//   - aaa.com:8080
 func (d *GNetDialer) DialDualStack(addr string) (net.Conn, error) {
 	return d.dial(addr, true, DefaultDialTimeout)
 }
@@ -320,9 +319,9 @@ func (d *GNetDialer) DialDualStack(addr string) (net.Conn, error) {
 //
 // This function has the following additional features comparing to net.Dial:
 //
-//   * It reduces load on DNS resolver by caching resolved TCP addressed
+//   - It reduces load on DNS resolver by caching resolved TCP addressed
 //     for DNSCacheDuration.
-//   * It dials all the resolved TCP addresses in round-robin manner until
+//   - It dials all the resolved TCP addresses in round-robin manner until
 //     connection is established. This may be useful if certain addresses
 //     are temporarily unreachable.
 //
@@ -334,9 +333,9 @@ func (d *GNetDialer) DialDualStack(addr string) (net.Conn, error) {
 //
 // The addr passed to the function must contain port. Example addr values:
 //
-//     * foobar.baz:443
-//     * foo.bar:80
-//     * aaa.com:8080
+//   - foobar.baz:443
+//   - foo.bar:80
+//   - aaa.com:8080
 func (d *GNetDialer) DialDualStackTimeout(addr string, timeout time.Duration) (net.Conn, error) {
 	return d.dial(addr, true, timeout)
 }

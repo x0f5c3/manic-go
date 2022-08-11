@@ -25,7 +25,7 @@ func (c *Config) WithProxy(proxy *url.URL) *Config {
 	if c.Client == nil {
 		c.Client = DefaultClient
 	}
-	c.Client.cl.Dial = ProxyDialer(proxy.String(), time.Second*10)
+	c.Client.Dial = ProxyDialer(proxy.String(), time.Second*10)
 	return c
 }
 
@@ -33,9 +33,9 @@ func (c *Config) WithTimeout(timeout time.Duration) *Config {
 	if c.Client == nil {
 		c.Client = DefaultClient
 	}
-	c.Client.cl.WriteTimeout = timeout
-	c.Client.cl.ReadTimeout = timeout
-	c.Client.cl.MaxConnWaitTimeout = timeout
+	c.Client.WriteTimeout = timeout
+	c.Client.ReadTimeout = timeout
+	c.Client.MaxConnWaitTimeout = timeout
 	return c
 }
 

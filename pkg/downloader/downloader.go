@@ -3,7 +3,6 @@ package downloader
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -62,7 +61,7 @@ type DownloadedFile struct {
 
 func (c *DownloadedFile) Verify() error {
 	if c.saved && c.Path != "" && c.sum != nil {
-		data, err := ioutil.ReadFile(c.Path)
+		data, err := os.ReadFile(c.Path)
 		if err != nil {
 			return err
 		}
@@ -101,10 +100,10 @@ func (c *DownloadedFile) Save(path string) error {
 	result := wg.Wait()
 	if result != nil {
 		result.ErrorFormat = errFormat
-	}
-	err = result.ErrorOrNil()
-	if err != nil {
-		return err
+		err = result.ErrorOrNil()
+		if err != nil {
+			return err
+		}
 	}
 	c.saved = true
 	c.Path = fPath

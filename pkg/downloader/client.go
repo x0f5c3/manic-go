@@ -8,7 +8,7 @@ import (
 )
 
 type Client struct {
-	cl *fasthttp.Client
+	*fasthttp.Client
 }
 
 var DefaultClient = NewClient()
@@ -22,7 +22,7 @@ func NewClient() *Client {
 		Dial:                          defaultDial,
 		DialDualStack:                 true,
 	}
-	return &Client{cl: cl}
+	return &Client{Client: cl}
 }
 
 type Addr struct {
@@ -94,7 +94,7 @@ func (c *Client) Head(url string) (*Response, error) {
 	req.SetRequestURI(url)
 	req.Header.SetMethod("HEAD")
 	resp := AcquireResponse()
-	err := c.cl.DoRedirects(req, resp.Response, 30)
+	err := c.DoRedirects(req, resp.Response, 30)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (c *Client) GetRange(url, val string) (*Response, error) {
 	req.Header.SetMethod("GET")
 	req.Header.Set("RANGE", val)
 	resp := AcquireResponse()
-	err := c.cl.DoRedirects(req, resp.Response, 30)
+	err := c.DoRedirects(req, resp.Response, 30)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (c *Client) Get(url string) (*Response, error) {
 	req.SetRequestURI(url)
 	req.Header.SetMethod("GET")
 	resp := AcquireResponse()
-	err := c.cl.DoRedirects(req, resp.Response, 30)
+	err := c.DoRedirects(req, resp.Response, 30)
 	if err != nil {
 		return nil, err
 	}
