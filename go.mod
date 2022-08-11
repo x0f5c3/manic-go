@@ -1,6 +1,6 @@
 module github.com/x0f5c3/manic-go
 
-go 1.18
+go 1.19
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1

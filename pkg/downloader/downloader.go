@@ -10,7 +10,6 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"strconv"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pterm/pterm"
@@ -145,27 +144,18 @@ func GetLength(url string, client *Client) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	rawString, ok := resp.Headers["Content-Length"]
-	if rawString == "" || !ok {
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			return 0, err
-		}
-		req.Header.Set("Range", "bytes=0-0")
+	rawString := resp.Header.ContentLength()
+	if rawString == 0 {
 		resp, err := client.GetRange(url, "bytes=0-0")
 		if err != nil {
 			return 0, err
 		}
-		rawString, ok = resp.Headers["Content-Length"]
-		if rawString == "" || !ok {
+		rawString = resp.Header.ContentLength()
+		if rawString == 0 {
 			return 0, errors.New("can't retrieve length")
 		}
 	}
-	parsed, err := strconv.Atoi(rawString)
-	if err != nil {
-		return 0, err
-	}
-	return parsed, nil
+	return rawString, nil
 
 }
 
@@ -192,9 +182,9 @@ func (c *File) DownloadChunk(chunk chunk.SingleChunk) (*chunk.SingleChunk, error
 		// if err != nil {
 		// 	return nil, err
 		// } else {
-		copy(chunk.Data, resp.Body)
+		copy(chunk.Data, resp.Body())
 		if c.bar != nil {
-			c.bar.Add(len(resp.Body))
+			c.bar.Add(len(chunk.Data))
 		}
 		return &chunk, nil
 	}
