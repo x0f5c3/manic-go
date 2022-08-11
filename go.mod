@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/panjf2000/gnet/v2 v2.1.0
+	github.com/panjf2000/gnet/v2 v2.1.1
 	github.com/pterm/pcli v0.4.6
 	github.com/pterm/pterm v0.12.41
 	github.com/spf13/cobra v1.1.3
