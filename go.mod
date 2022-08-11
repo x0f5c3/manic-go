@@ -6,19 +6,22 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/panjf2000/gnet/v2 v2.1.0
 	github.com/pterm/pcli v0.4.6
-	github.com/pterm/pterm v0.12.41
+	github.com/pterm/pterm v0.12.45
 	github.com/spf13/cobra v1.1.3
 	github.com/superwhiskers/crunch/v3 v3.5.6
 	github.com/valyala/fasthttp v1.38.0
 )
 
 require (
+	atomicgo.dev/cursor v0.1.1 // indirect
+	atomicgo.dev/keyboard v0.2.8 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/atomicgo/cursor v0.0.1 // indirect
+	github.com/containerd/console v1.0.3 // indirect
 	github.com/gookit/color v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/klauspost/compress v1.15.0 // indirect
+	github.com/lithammer/fuzzysearch v1.1.5 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -32,5 +35,6 @@ require (
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
