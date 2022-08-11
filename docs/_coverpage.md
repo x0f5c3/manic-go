@@ -1,8 +1,8 @@
 # manic-go
 
-> Program intended to be a port of my manic library but also with a cli
+> Download accelerator
 
-Port of my manic library but with a cli, the same is planned for the rust version soon
+Download accelerator for fast HTTP downloads with SHA256 sum verification
 
 [Installation](installation.md)
 [Docs](docs.md)
