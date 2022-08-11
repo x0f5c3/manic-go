@@ -1,5 +1,5 @@
 <h1 align="center">manic-go</h1>
-<p align="center">Program intended to be a port of my manic library but also with a cli</p>
+<p align="center">Download accelerator</p>
 
 <p align="center">
 
@@ -49,7 +49,7 @@
 
 ----
 
-Port of my manic library but with a cli, the same is planned for the rust version soon
+Download accelerator for fast HTTP downloads with SHA256 sum verification
 
 ## Installation
 

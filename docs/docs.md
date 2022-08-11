@@ -1,14 +1,14 @@
 # manic-go
 
 ## Usage
-> Program intended to be a port of my manic library but also with a cli
+> Download accelerator
 
 manic-go
 
 ## Description
 
 ```
-Port of my manic library but with a cli, the same is planned for the rust version soon
+Download accelerator for fast HTTP downloads with SHA256 sum verification
 ```
 
 ## Flags
@@ -22,7 +22,6 @@ Port of my manic library but with a cli, the same is planned for the rust versio
 |Command|Usage|
 |-------|-----|
 |`manic-go download`|Download file over HTTP|
-|`manic-go gh`|A brief description of your command|
 |`manic-go help`|Help about any command|
 |`manic-go tests`|Testing downloading|
 # ... download
@@ -31,7 +30,7 @@ Port of my manic library but with a cli, the same is planned for the rust versio
 ## Usage
 > Download file over HTTP
 
-manic-go download
+manic-go download [url]
 
 ## Flags
 |Flag|Usage|
@@ -39,32 +38,10 @@ manic-go download
 |`-c, --check string`|Compare to a sha256sum|
 |`-o, --output string`|Save to file|
 |`-p, --progress`|Progress bar|
+|`--proxy string`|Proxy servers to use|
 |`-t, --threads int`|Maximum amount of threads (default 2)|
 |`-T, --timeout int`|Set I/O and connection timeout (default 30)|
 |`-w, --workers int`|amount of concurrent workers (default 3)|
-# ... gh
-`manic-go gh`
-
-## Usage
-> A brief description of your command
-
-manic-go gh
-
-## Description
-
-```
-A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.
-```
-
-## Flags
-|Flag|Usage|
-|----|-----|
-|`-i, --interactive`|Choose the release to download via a menu|
 # ... help
 `manic-go help`
 
@@ -106,4 +83,4 @@ Command used for testing the program.
 
 
 ---
-> **Documentation automatically generated with [PTerm](https://github.com/pterm/cli-template) on 10 June 2022**
+> **Documentation automatically generated with [PTerm](https://github.com/pterm/cli-template) on 11 August 2022**
