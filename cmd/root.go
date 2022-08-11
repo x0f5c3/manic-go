@@ -12,8 +12,8 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:     "manic-go",
-	Short:   "Program intended to be a port of my manic library but also with a cli",
-	Long:    `Port of my manic library but with a cli, the same is planned for the rust version soon`,
+	Short:   "Download accelerator",
+	Long:    `Download accelerator for fast HTTP downloads with SHA256 sum verification`,
 	Version: "0.4.3", // <---VERSION---> Updating this version, will also create a new GitHub release.
 	// Uncomment the following line if your bare application
 	// has an action associated with it:

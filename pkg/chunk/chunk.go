@@ -51,6 +51,9 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+type CollectedChunks []SingleChunk
+
 func (c *Chunks) Next() bool {
 	if c.low > c.hi {
 		c.next = ""
@@ -64,6 +67,15 @@ func (c *Chunks) Next() bool {
 		return true
 	}
 }
+
+func (c *Chunks) Collect() CollectedChunks {
+	var res []SingleChunk
+	for c.Next() {
+		res = append(res, c.Get())
+	}
+	return res
+}
+
 func (c *Chunks) Get() SingleChunk {
 	return SingleChunk{
 		Val:    c.next,

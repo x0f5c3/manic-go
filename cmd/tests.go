@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"github.com/pterm/pterm"
-	"net/http"
 
 	"github.com/spf13/cobra"
+
 	"github.com/x0f5c3/manic-go/pkg/downloader"
 )
 
@@ -44,8 +44,8 @@ func init() {
 
 func download(cmd *cobra.Command, args []string) error {
 	url := args[0]
-	client := http.Client{}
-	file, err := downloader.New(url, check, &client, nil)
+	// client := http.Client{}
+	file, err := downloader.New(url, check, nil, nil)
 	if err != nil {
 		pterm.Error.Printf("%v", err)
 		return err
@@ -54,12 +54,13 @@ func download(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		panic(err)
 	}
-	if err := file.Download(workers, threads, flag); err != nil {
+	f, err := file.Download(workers, threads, flag)
+	if err != nil {
 		pterm.Error.Printf("Error: %v\n", err)
 		return err
 	}
 	if path != "" {
-		if err := file.Save(path); err != nil {
+		if err := f.Save(path); err != nil {
 			pterm.Error.Printf("Error: %v\n", err)
 			return err
 		}
