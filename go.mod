@@ -9,7 +9,7 @@ require (
 	github.com/pterm/pterm v0.12.45
 	github.com/spf13/cobra v1.5.0
 	github.com/superwhiskers/crunch/v3 v3.5.6
-	github.com/valyala/fasthttp v1.38.0
+	github.com/valyala/fasthttp v1.40.0
 )
 
 require (
