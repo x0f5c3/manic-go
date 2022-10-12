@@ -7,7 +7,7 @@ require (
 	github.com/panjf2000/gnet/v2 v2.1.1
 	github.com/pterm/pcli v0.4.6
 	github.com/pterm/pterm v0.12.45
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.0
 	github.com/superwhiskers/crunch/v3 v3.5.6
 	github.com/valyala/fasthttp v1.38.0
 )
