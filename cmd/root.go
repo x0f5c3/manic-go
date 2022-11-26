@@ -14,7 +14,7 @@ var rootCmd = &cobra.Command{
 	Use:     "manic-go",
 	Short:   "Download accelerator",
 	Long:    `Download accelerator for fast HTTP downloads with SHA256 sum verification`,
-	Version: "0.4.3", // <---VERSION---> Updating this version, will also create a new GitHub release.
+	Version: "v0.5.5", // <---VERSION---> Updating this version, will also create a new GitHub release.
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
