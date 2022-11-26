@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"encoding/json"
+	"errors"
 	"net"
 
 	"github.com/valyala/fasthttp"
@@ -73,8 +74,28 @@ func fromAddr(addr net.Addr) Addr {
 // 	}, nil
 // }
 
+var respPool = func() chan *Response {
+	c := make(chan *Response, 100)
+	for i := 0; i < 100; i++ {
+		c <- &Response{fasthttp.AcquireResponse()}
+	}
+	return c
+}()
+
+var reqPool = func() chan *Request {
+	c := make(chan *Request, 100)
+	for i := 0; i < 100; i++ {
+		c <- &Request{fasthttp.AcquireRequest()}
+	}
+	return c
+}()
+
 type Response struct {
 	*fasthttp.Response
+}
+
+type Request struct {
+	*fasthttp.Request
 }
 
 func (r *Response) Json(res any) error {
@@ -82,19 +103,32 @@ func (r *Response) Json(res any) error {
 }
 
 func AcquireResponse() *Response {
-	return &Response{Response: fasthttp.AcquireResponse()}
+	return <-respPool
 }
+
 func ReleaseResponse(response *Response) {
 	fasthttp.ReleaseResponse(response.Response)
+	response.Response = fasthttp.AcquireResponse()
+	respPool <- response
+}
+
+func AcquireRequest() *Request {
+	return <-reqPool
+}
+
+func ReleaseRequest(req *Request) {
+	fasthttp.ReleaseRequest(req.Request)
+	req.Request = fasthttp.AcquireRequest()
+	reqPool <- req
 }
 
 func (c *Client) Head(url string) (*Response, error) {
-	req := fasthttp.AcquireRequest()
-	defer fasthttp.ReleaseRequest(req)
+	req := AcquireRequest()
+	defer ReleaseRequest(req)
 	req.SetRequestURI(url)
 	req.Header.SetMethod("HEAD")
 	resp := AcquireResponse()
-	err := c.DoRedirects(req, resp.Response, 30)
+	err := c.DoRedirects(req.Request, resp.Response, 30)
 	if err != nil {
 		return nil, err
 	}
@@ -105,30 +139,51 @@ func (c *Client) Head(url string) (*Response, error) {
 	return resp, nil
 }
 
+func (c *Client) GetLength(url string) (int, error) {
+	resp, err := c.Head(url)
+	if err != nil {
+		return 0, err
+	}
+	res := resp.Header.ContentLength()
+	if res <= 0 {
+		resp, err := c.GetRange(url, "bytes=0-0")
+		if err != nil {
+			return 0, err
+		}
+		res = resp.Header.ContentLength()
+		if res <= 0 {
+			return 0, errors.New("get length failed")
+		}
+	}
+	ReleaseResponse(resp)
+	return res, nil
+}
+
 func (c *Client) GetRange(url, val string) (*Response, error) {
-	req := fasthttp.AcquireRequest()
+	req := AcquireRequest()
+	defer ReleaseRequest(req)
 	req.SetRequestURI(url)
 	req.Header.SetMethod("GET")
 	req.Header.Set("RANGE", val)
 	resp := AcquireResponse()
-	err := c.DoRedirects(req, resp.Response, 30)
+	err := c.DoRedirects(req.Request, resp.Response, 30)
 	if err != nil {
 		return nil, err
 	}
-	fasthttp.ReleaseRequest(req)
+	fasthttp.ReleaseRequest(req.Request)
 	return resp, nil
 }
 
 func (c *Client) Get(url string) (*Response, error) {
-	req := fasthttp.AcquireRequest()
+	req := AcquireRequest()
+	defer ReleaseRequest(req)
 	req.SetRequestURI(url)
 	req.Header.SetMethod("GET")
 	resp := AcquireResponse()
-	err := c.DoRedirects(req, resp.Response, 30)
+	err := c.DoRedirects(req.Request, resp.Response, 30)
 	if err != nil {
 		return nil, err
 	}
-	fasthttp.ReleaseRequest(req)
 
 	return resp, nil
 }

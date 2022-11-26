@@ -6,11 +6,12 @@ before:
 gomod:
   proxy: true
 builds:
-  - env:
+  - binary: manic-go
+    id: lin-win
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
       - windows
     goarch:
       - 386
@@ -22,8 +23,44 @@ builds:
       - -trimpath
     ldflags:
       - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{ .CommitDate }} -X main.builtBy=pterm
+  - binary: manic-go
+    id: mac
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{ .CommitDate }} -X main.builtBy=pterm
+universal_binaries:
+  -
+    # ID of resulting universal binary.
+    #
+    # Defaults to the project name.
+    id: mac-uni
+
+    ids:
+      - mac
+    # Universal binary name template.
+    #
+    # You will want to change this if you have multiple builds!
+    #
+    # Defaults to '{{ .ProjectName }}'
+    name_template: '{{.ProjectName}}-Universal'
+
+    # Whether to remove the previous single-arch binaries from the artifact list.
+    # If left as false, your end release might have both several macOS archives: amd64, arm64 and all.
+    #
+    # Defaults to false.
+    replace: true
+
 checksum:
-  name_template: '{{ .ProjectName }}_checksums.txt'
+  name_template: '{{ .ProjectName }}.sha256'
 changelog:
   sort: asc
   filters:
@@ -36,11 +73,35 @@ changelog:
       - Merge branch
       - go mod tidy
 archives:
-  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+  - id: lin-win
+    name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    builds:
+      - lin-win
     replacements:
-      darwin: Darwin
       linux: Linux
       windows: Windows
     format_overrides:
       - goos: windows
         format: zip
+    files:
+      - README.md
+      - LICENSE
+  - id: macos-zip
+    format: zip
+    name_template: "{{ .ProjectName }}-{{ .Os }}-Universal"
+    builds:
+      - mac-uni
+    replacements:
+      darwin: MacOS
+      amd64: x86_64
+    files:
+      - README.md
+      - LICENSE
+
+release:
+  ids:
+    - none
+  extra_files:
+    - glob: ./dist/manic-go-MacOS-Universal.zip
+    - glob: ./dist/manic-go-Linux*.tar.gz
+    - glob: ./dist/manic-go-Windows*.zip

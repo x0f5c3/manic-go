@@ -1,4 +1,4 @@
-//go:build !(darwin && arm64)
+//go:build !(windows || (darwin && arm64))
 
 package downloader
 
@@ -170,12 +170,12 @@ var defaultDialer = func() *GNetDialer {
 	return res
 }()
 
-var GNetResolver = func(cl *gnet.Client) *net.Resolver {
+func NewResolver(cl *gnet.Client, dialer *GNetDialer) *net.Resolver {
 	return &net.Resolver{
 		PreferGo:     true,
 		StrictErrors: false,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			conn, err := defaultDialer.DialContext(ctx, network, address)
+			conn, err := dialer.DialContext(ctx, network, address)
 			err = checkDialError(ctx, err)
 			if err != nil {
 				return nil, err
@@ -218,7 +218,6 @@ func NewDialer(opts *DialerOptions, GNetOpts ...gnet.Option) (*GNetDialer, error
 	if err != nil {
 		return nil, err
 	}
-	res := GNetResolver(cl)
 	if opts == nil {
 		opts = DefaultOptions
 	}
@@ -227,6 +226,7 @@ func NewDialer(opts *DialerOptions, GNetOpts ...gnet.Option) (*GNetDialer, error
 	dialer.Concurrency = opts.Conn
 	dialer.LocalAddr = opts.LocalAddr
 	dialer.DNSCacheDuration = opts.DNSCacheDuration
+	res := NewResolver(cl, dialer)
 	dialer.Resolver = res
 	dialer.tcpAddrsMap = sync.Map{}
 	dialer.once = sync.Once{}

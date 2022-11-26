@@ -174,6 +174,7 @@ func (c *File) GetFilename() error {
 
 func (c *File) DownloadChunk(chunk *chunk.SingleChunk) (*chunk.SingleChunk, error) {
 	resp, err := c.Client.GetRange(c.Url, chunk.Val)
+	defer ReleaseResponse(resp)
 	if err != nil {
 		return nil, err
 	} else {
