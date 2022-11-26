@@ -172,7 +172,7 @@ func (c *File) GetFilename() error {
 	return nil
 }
 
-func (c *File) DownloadChunk(chunk chunk.SingleChunk) (*chunk.SingleChunk, error) {
+func (c *File) DownloadChunk(chunk *chunk.SingleChunk) (*chunk.SingleChunk, error) {
 	resp, err := c.Client.GetRange(c.Url, chunk.Val)
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func (c *File) DownloadChunk(chunk chunk.SingleChunk) (*chunk.SingleChunk, error
 		if c.bar != nil {
 			c.bar.Add(len(chunk.Data))
 		}
-		return &chunk, nil
+		return chunk, nil
 	}
 }
 
@@ -201,12 +201,11 @@ func (c *File) downloadInner(workers, threads int) (*DownloadedFile, error) {
 		return nil, err
 	}
 	collChunks := chnk.Collect()
-	resChan := make(chan downloadResult)
+	resChan := make(chan downloadResult, len(collChunks))
 	wg := &multierror.Group{}
 	for _, v := range collChunks {
-		v := v
 		wg.Go(func() error {
-			res, err := c.DownloadChunk(v)
+			res, err := c.DownloadChunk(&v)
 			if err != nil {
 				return err
 			}
@@ -222,6 +221,7 @@ func (c *File) downloadInner(workers, threads int) (*DownloadedFile, error) {
 	if err2 != nil {
 		return nil, err2
 	}
+	close(resChan)
 	resData := v3.NewBuffer()
 	for v := range resChan {
 		if v.Err != nil {

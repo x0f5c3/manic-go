@@ -1,4 +1,4 @@
-//go:build unix && !(darwin && arm64)
+//go:build !(darwin && arm64)
 
 package downloader
 
