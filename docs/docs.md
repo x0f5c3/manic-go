@@ -240,4 +240,4 @@ Command used for testing the program.
 
 
 ---
-> **Documentation automatically generated with [PTerm](https://github.com/pterm/cli-template) on 26 November 2022**
+> **Documentation automatically generated with [PTerm](https://github.com/pterm/cli-template) on 28 January 2023**
