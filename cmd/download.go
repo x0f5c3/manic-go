@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"net/url"
-	"path/filepath"
 	"runtime"
 
 	"github.com/spf13/cobra"
@@ -58,9 +57,9 @@ func runDownload(_ *cobra.Command, args []string) error {
 	}
 	outputPath := func() string {
 		if path != "" {
-			return filepath.Join(path, f.FileName)
+			return path
 		}
-		return filepath.Join(".", f.FileName)
+		return "."
 	}()
 	return f.Save(outputPath)
 }

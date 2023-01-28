@@ -3,6 +3,7 @@ package downloader
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pterm/pterm"
-	v3 "github.com/superwhiskers/crunch/v3"
 
 	"github.com/x0f5c3/manic-go/pkg/chunk"
 )
@@ -37,7 +37,96 @@ type ToDownload struct {
 
 type Buffer struct {
 	Chunks chunk.CollectedChunks
-	*v3.Buffer
+	Buf    []byte
+	// ctx       context.Context
+	// wg        *multierror.Group
+	// chunkChan chan downloadResult
+	// errFormat multierror.ErrorFormatFunc
+	// pb        *pterm.ProgressbarPrinter
+}
+
+// func NewBuffer(ctx context.Context, chunks chunk.CollectedChunks, progress bool) *Buffer {
+// 	wg := &multierror.Group{}
+// 	var pb *pterm.ProgressbarPrinter
+// 	var err error
+// 	if progress {
+// 		pb, err = pterm.DefaultProgressbar.WithTotal(len(chunks)).WithTitle("Writing chunks").Start()
+// 		if err != nil {
+// 			pterm.Error.Println(err)
+// 			pb = nil
+// 		}
+// 	} else {
+// 		pb = nil
+// 	}
+// 	chunkChan := make(chan downloadResult)
+// 	errFormat := func(e []error) string {
+// 		res := ""
+// 		for _, v := range e {
+// 			res += pterm.Error.Sprintln(v)
+// 		}
+// 		return res
+// 	}
+// 	buf := &Buffer{
+// 		Chunks:    chunks,
+// 		Buf:       make([]byte, 0),
+// 		ctx:       ctx,
+// 		chunkChan: chunkChan,
+// 		errFormat: errFormat,
+// 		wg:        wg,
+// 		pb:        pb,
+// 	}
+// 	wg.Go(func() error {
+// 		internalWg := &multierror.Group{}
+// 		internalCtx, cancel := context.WithCancel(ctx)
+// 		go func() {
+// 			_ = internalWg.Wait()
+// 			cancel()
+// 		}()
+// 		defer cancel()
+// 		for {
+// 			select {
+// 			case <-internalCtx.Done():
+// 				err := internalWg.Wait()
+// 				err.ErrorFormat = buf.errFormat
+// 				return err.ErrorOrNil()
+// 			case res := <-chunkChan:
+// 				if res.Err != nil {
+// 					return res.Err
+// 				}
+// 				internalWg.Go(func() error {
+// 					n, err := buf.WriteAt(res.Chunk.Data, int64(res.Chunk.Offset))
+// 					if pb != nil {
+// 						pb.Increment()
+// 					}
+// 					if err != nil {
+// 						return err
+// 					}
+// 					if n < len(res.Chunk.Data) {
+// 						return io.ErrShortWrite
+// 					}
+// 					return nil
+// 				})
+// 			}
+// 		}
+// 	})
+// 	return buf
+// }
+
+func (b *Buffer) Bytes() []byte {
+	return b.Buf
+}
+
+func (b *Buffer) WriteAt(p []byte, off int64) (n int, err error) {
+	if len(b.Buf) < int(off)+len(p) || cap(b.Buf) < int(off)+len(p) {
+		newBuf := make([]byte, int(off)+len(p))
+		copy(newBuf, b.Buf)
+		b.Buf = newBuf
+	}
+	n = copy(b.Buf[off:], p)
+	if n < len(p) {
+		err = io.ErrShortWrite
+	}
+	return
 }
 
 type File struct {
@@ -74,6 +163,10 @@ func (c *DownloadedFile) Verify() error {
 }
 
 func (c *DownloadedFile) Save(path string) error {
+	bar, err := pterm.DefaultProgressbar.WithTotal(len(c.Data.Buf)).WithShowPercentage(true).WithShowCount(false).WithTitle("Saving file").Start()
+	if err != nil {
+		return err
+	}
 	fPath := filepath.Join(path, c.FileName)
 	f, err := os.Create(fPath)
 	if err != nil {
@@ -90,10 +183,11 @@ func (c *DownloadedFile) Save(path string) error {
 	for _, v := range c.Data.Chunks {
 		v := v
 		wg.Go(func() error {
-			_, err := f.WriteAt(v.Data, int64(v.Offset))
+			n, err := f.WriteAt(v.Data, int64(v.Offset))
 			if err != nil {
 				return err
 			}
+			bar.Add(n)
 			return nil
 		})
 	}
@@ -104,6 +198,10 @@ func (c *DownloadedFile) Save(path string) error {
 		if err != nil {
 			return err
 		}
+	}
+	_, err = bar.Stop()
+	if err != nil {
+		pterm.Error.Println(err)
 	}
 	c.saved = true
 	c.Path = fPath
@@ -223,17 +321,22 @@ func (c *File) downloadInner(workers, threads int) (*DownloadedFile, error) {
 		return nil, err2
 	}
 	close(resChan)
-	resData := v3.NewBuffer()
-	resData.Grow(int64(c.Length) + 10)
+	if c.bar != nil {
+		_, err = c.bar.Stop()
+		if err != nil {
+			return nil, err
+		}
+	}
+	resBuf := &Buffer{Chunks: collChunks, Buf: make([]byte, c.Length+1)}
 	for v := range resChan {
 		if v.Err != nil {
 			return nil, err
 		}
 		startPos := v.Chunk.Offset
-		if (int64(startPos) + int64(len(v.Chunk.Data))) > resData.ByteCapacity() {
-			resData.Grow(int64(len(v.Chunk.Data)))
+		_, err := resBuf.WriteAt(v.Chunk.Data, int64(startPos))
+		if err != nil {
+			return nil, err
 		}
-		resData.WriteBytes(int64(startPos), v.Chunk.Data)
 	}
 	var sum *CheckSum
 	if c.Sha != "" {
@@ -248,31 +351,14 @@ func (c *File) downloadInner(workers, threads int) (*DownloadedFile, error) {
 		Url:      c.Url,
 		FileName: c.FileName,
 		sum:      sum,
-		Data:     &Buffer{Chunks: collChunks, Buffer: v3.NewBuffer()},
+		Data:     resBuf,
 	}
 	return &res, nil
-	// for chnk.Next() {
-	// 	next := chnk.Get()
-	// 	promises = append(promises, c.DownloadChunk(next))
-	// }
-	// for _, fut := range promises {
-	// 	res, err := fut.Get()
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	convert := res.(chunk.SingleChunk)
-	// 	startPos := convert.Offset
-	// 	for _, dat := range convert.Data {
-	// 		(*c.Data)[startPos] = dat
-	// 		startPos++
-	// 	}
-	// }
-	// return nil
 }
 
 func (c *File) DownloadWithProgress(workers, threads int) (*DownloadedFile, error) {
 	name := pterm.Blink.Sprint(pterm.FgMagenta.Sprintf("Downloading %s", c.FileName))
-	bar, err := pterm.DefaultProgressbar.WithTotal(c.Length).WithTitle(name).Start()
+	bar, err := pterm.DefaultProgressbar.WithTotal(c.Length).WithShowCount(false).WithShowPercentage(true).WithTitle(name).Start()
 	if err != nil {
 		return nil, err
 	}
@@ -281,10 +367,10 @@ func (c *File) DownloadWithProgress(workers, threads int) (*DownloadedFile, erro
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.bar.Stop()
-	if err != nil {
-		pterm.Error.Println(err)
-	}
+	// _, err = c.bar.Stop()
+	// if err != nil {
+	// 	pterm.Error.Println(err)
+	// }
 	return res, nil
 }
 func (c *File) Download(workers, threads int, progress bool) (*DownloadedFile, error) {
