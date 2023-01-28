@@ -224,6 +224,7 @@ func (c *File) downloadInner(workers, threads int) (*DownloadedFile, error) {
 	}
 	close(resChan)
 	resData := v3.NewBuffer()
+	resData.Grow(int64(c.Length) + 10)
 	for v := range resChan {
 		if v.Err != nil {
 			return nil, err
