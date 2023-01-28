@@ -229,16 +229,24 @@ func (c *File) downloadInner(workers, threads int) (*DownloadedFile, error) {
 			return nil, err
 		}
 		startPos := v.Chunk.Offset
+		if (int64(startPos) + int64(len(v.Chunk.Data))) > resData.ByteCapacity() {
+			resData.Grow(int64(len(v.Chunk.Data)))
+		}
 		resData.WriteBytes(int64(startPos), v.Chunk.Data)
 	}
-	sum := CheckSum{
-		Sum:     c.Sha,
-		SumType: Sha256,
+	var sum *CheckSum
+	if c.Sha != "" {
+		sum = &CheckSum{
+			Sum:     c.Sha,
+			SumType: Sha256,
+		}
+	} else {
+		sum = nil
 	}
 	res := DownloadedFile{
 		Url:      c.Url,
 		FileName: c.FileName,
-		sum:      &sum,
+		sum:      sum,
 		Data:     &Buffer{Chunks: collChunks, Buffer: v3.NewBuffer()},
 	}
 	return &res, nil
